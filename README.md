@@ -38,3 +38,10 @@ This project is ideal for:
 - **Learning & Exploration**: Explore integrating large language models into real-world web services.
 
 With this service, we aim to simplify test development, allowing developers to focus on core logic while ensuring software quality.
+
+## Setup Instructions
+
+**Note**: You need to create a `.env` file in the project root directory to store sensitive configuration, such as the Gemini API key. The `.env` file should include the following content:
+
+```plaintext
+GEMINI_API_KEY="your_GEMINI_API_KEY"
