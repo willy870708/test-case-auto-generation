@@ -1,0 +1,52 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  # 1. Redis 服務
+  redis:
+    image: "redis:alpine"
+    container_name: testgen-redis
+    restart: always  # <--- 新增：確保容器意外停止時會自動重啟
+    ports:
+      - "6379:6379"
+    healthcheck: # <--- 新增：健康檢查，確保 Redis 服務正常
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - redis_data:/data
+
+  # 2. FastAPI Web 應用服務
+  app:
+    build: .
+    container_name: testgen-app
+    restart: always # <--- 新增：自動重啟策略
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app # 將本地程式碼掛載到容器，方便開發
+    env_file:
+      - .env
+    depends_on:
+      redis: # <--- 修改：等待 Redis 健康檢查通過後再啟動
+        condition: service_healthy
+    command: "uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+
+  # 3. Celery 背景任務處理器服務
+  worker:
+    build: .
+    container_name: testgen-worker
+    restart: always # <--- 新增：自動重啟策略
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      redis: # <--- 修改：等待 Redis 健康檢查通過後再啟動
+        condition: service_healthy
+    command: "celery -A tasks.celery worker --loglevel=info"
+
+# 定義一個 volume 來持久化儲存 Redis 資料
+volumes:
+  redis_data:
